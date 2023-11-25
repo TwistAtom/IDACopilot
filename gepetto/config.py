@@ -4,63 +4,83 @@ import os
 
 import openai
 
-from gepetto.models.base import get_model
+gettext.install("gepetto")
 
-translate = None
-model = None
-
-
-def load_config():
+class GepettoConfig:
     """
-    Loads the configuration of the plugin from the INI file. Sets up the correct locale and language model.
-    :return:
+    Class that handles the configuration of the plugin.
     """
-    global translate, model
-    config = configparser.RawConfigParser()
-    config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), "config.ini"))
+    _instance = None
 
-    # Set up translations
-    language = config.get('Gepetto', 'LANGUAGE')
-    translate = gettext.translation('gepetto',
-                                    os.path.join(os.path.abspath(os.path.dirname(__file__)), "locales"),
-                                    fallback=True,
-                                    languages=[language])
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+    
+    def __init__(self, config_path='config.ini'):
+        if hasattr(self, 'config_path'):
+            return
+        
+        self.config_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), config_path)
+        self.translate = None
+        self.model = None
+        self.ollama_base_url = None
 
-    # Get API keys
-    if not config.get('OpenAI', 'API_KEY'):
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-    else:
-        openai.api_key = config.get('OpenAI', 'API_KEY')
-        print(f"Key set to {openai.api_key}")
+    def load(self, model_loader):
+        """
+        Loads the configuration of the plugin from the INI file. Sets up the correct locale and language model.
+        :return:
+        """
+        config = configparser.RawConfigParser()
+        config.read(self.config_path)
 
-    # Get OPENAPI proxy
-    if not config.get('OpenAI', 'OPENAI_PROXY'):
-        openai.proxy = None
-    else:
-        openai.proxy = config.get('OpenAI', 'OPENAI_PROXY')
+        # Set up translations
+        language = config.get('Gepetto', 'LANGUAGE')
+        self.translate = gettext.translation('gepetto',
+                                        os.path.join(os.path.abspath(os.path.dirname(__file__)), "locales"),
+                                        fallback=True,
+                                        languages=[language])
+        self.translate.install()
 
-    # Get OPENAPI PROXY
-    if not config.get('OpenAI', 'OPENAI_PROXY'):
-        openai.proxy = None
-    else:
-        openai.proxy = config.get('OpenAI', 'OPENAI_PROXY')
+        # Get API keys
+        if not config.get('OpenAI', 'API_KEY'):
+            openai.api_key = os.getenv("OPENAI_API_KEY")
+        else:
+            openai.api_key = config.get('OpenAI', 'API_KEY')
+            print(f"Key set to {openai.api_key}")
 
-    # Select model
-    requested_model = config.get('Gepetto', 'MODEL')
-    model = get_model(requested_model)
+        # Get OPENAPI proxy
+        if not config.get('OpenAI', 'OPENAI_PROXY'):
+            openai.proxy = None
+        else:
+            openai.proxy = config.get('OpenAI', 'OPENAI_PROXY')
 
+        # Get OPENAPI PROXY
+        if not config.get('OpenAI', 'OPENAI_PROXY'):
+            openai.proxy = None
+        else:
+            openai.proxy = config.get('OpenAI', 'OPENAI_PROXY')
 
-def update_config(section, option, new_value):
-    """
-    Updates a single entry in the configuration.
-    :param section: The section in which the option is located
-    :param option: The option to update
-    :param new_value: The new value to set
-    :return:
-    """
-    path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "config.ini")
-    config = configparser.RawConfigParser()
-    config.read(path)
-    config.set(section, option, new_value)
-    with open(path, "w") as f:
-        config.write(f)
+        # Get Ollama base URL
+        if not config.get('Ollama', 'OLLAMA_BASE_URL'):
+            self.ollama_base_url = None
+        else:
+            self.ollama_base_url = config.get('Ollama', 'OLLAMA_BASE_URL')
+
+        # Select model
+        requested_model = config.get('Gepetto', 'MODEL')
+        self.model = model_loader(requested_model)
+
+    def update(self, section, option, new_value):
+        """
+        Updates a single entry in the configuration.
+        :param section: The section in which the option is located
+        :param option: The option to update
+        :param new_value: The new value to set
+        :return:
+        """
+        config = configparser.RawConfigParser()
+        config.read(self.config_path)
+        config.set(section, option, new_value)
+        with open(self.config_path, "w") as f:
+            config.write(f)

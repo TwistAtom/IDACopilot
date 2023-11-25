@@ -1,8 +1,9 @@
-import gepetto.config
+from gepetto.config import GepettoConfig
+from gepetto.models.base import get_model
 
 
 def PLUGIN_ENTRY():
-    gepetto.config.load_config()  # Loads configuration data from gepetto/config.ini
+    GepettoConfig("config.ini").load(get_model)  # Loads configuration data from gepetto/config.ini
 
     # Only import the rest of the code after the translations have been loaded, because the _ function (gettext)
     # needs to have been imported in the namespace first.

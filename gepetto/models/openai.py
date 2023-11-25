@@ -8,7 +8,7 @@ import openai
 from gepetto.models.base import LanguageModel
 import gepetto.config
 
-_ = gepetto.config.translate.gettext
+config = gepetto.config.GepettoConfig()
 
 
 class GPT(LanguageModel):
@@ -66,7 +66,7 @@ class GPT(LanguageModel):
         :param query: The request to send to {model}
         :param cb: Tu function to which the response will be passed to.
         """
-        print(_("Request to {model} sent...").format(model=str(gepetto.config.model)))
+        print(_("Request to {model} sent...").format(model=str(config.model)))
         t = threading.Thread(target=self.query_model, args=[query, cb])
         t.start()
 
