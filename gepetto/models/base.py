@@ -1,5 +1,9 @@
 import abc
+import requests
 import threading
+
+from ..config import GepettoConfig
+config = GepettoConfig()
 
 class LanguageModel(abc.ABC):
     def __init__(self):
@@ -18,6 +22,23 @@ class LanguageModel(abc.ABC):
         print(_("Request to {model} sent...").format(model=str(self.model)))
         t = threading.Thread(target=self.query_model, args=[query, cb])
         t.start()
+
+def get_local_available_models():
+    try:
+        response = requests.get(
+            f"{config.ollama_base_url}/api/tags",
+            timeout=5*60 # 5 min
+        )
+        response.raise_for_status()
+    except Exception as e:
+        print("No local models found.")
+        print("Details: {error}".format(error=str(e)))
+        return []
+        
+    response.encoding = "utf-8"
+    json_response = response.json()
+
+    return [model['name'] for model in json_response.get('models', [])]
 
 def get_model(model, *args, **kwargs):
     """
