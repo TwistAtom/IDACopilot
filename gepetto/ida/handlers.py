@@ -164,15 +164,35 @@ class SwapModelHandler(idaapi.action_handler_t):
     This handler replaces the model currently in use with another one selected by the user,
     and updates the configuration.
     """
-    def __init__(self, new_model, plugin):
-        self.new_model = new_model
-        self.plugin = plugin
+    selected_action_handler = None
+
+    def __init__(self, action_id, model, selected=False):
+        self.action_id = action_id
+        self.model = model
+
+        if selected or SwapModelHandler.selected_action_handler is None:
+            SwapModelHandler.selected_action_handler = self
 
     def activate(self, ctx):
-        config.model = get_model(self.new_model)
-        config.update("Gepetto", "MODEL", self.new_model)
+        config.model = get_model(self.model)
+        config.update("Gepetto", "MODEL", self.model)
         # Refresh the menus to reflect which model is currently selected.
-        self.plugin.generate_plugin_select_menu()
+        idaapi.update_action_state(
+            SwapModelHandler.selected_action_handler.action_id,
+            SwapModelHandler.selected_action_handler.update_action()
+        )
+        idaapi.update_action_state(ctx.action, self.update_action())
+        SwapModelHandler.selected_action_handler = self
+        
+        return 0
 
     def update(self, ctx):
-        return idaapi.AST_ENABLE_ALWAYS
+        # return *_ALWAYS and place the update logic in activate() to avoid being
+        # triggered on every non-relevant IDA event
+        return self.update_action()
+    
+    def update_action(self):
+        enabled = str(config.model) != self.model
+        idaapi.update_action_icon(self.action_id, 0 if enabled else 208)
+
+        return idaapi.AST_ENABLE_ALWAYS if enabled else idaapi.AST_DISABLE_ALWAYS
