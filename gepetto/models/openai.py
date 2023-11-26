@@ -1,6 +1,5 @@
 import functools
 import re
-import threading
 
 import ida_kernwin
 import openai
@@ -57,16 +56,3 @@ class GPT(LanguageModel):
             print(_("{model} could not complete the request: {error}").format(model=self.model, error=str(e)))
         except Exception as e:
             print(_("General exception encountered while running the query: {error}").format(error=str(e)))
-
-    # -----------------------------------------------------------------------------
-
-    def query_model_async(self, query, cb):
-        """
-        Function which sends a query to {model} and calls a callback when the response is available.
-        :param query: The request to send to {model}
-        :param cb: Tu function to which the response will be passed to.
-        """
-        print(_("Request to {model} sent...").format(model=str(config.model)))
-        t = threading.Thread(target=self.query_model, args=[query, cb])
-        t.start()
-

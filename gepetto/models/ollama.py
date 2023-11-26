@@ -1,6 +1,5 @@
 import functools
 import re
-import threading
 import requests
 
 import ida_kernwin
@@ -74,15 +73,3 @@ class Ollama(LanguageModel):
 
         ida_kernwin.execute_sync(functools.partial(cb, response=json_response["response"]),
                         ida_kernwin.MFF_WRITE)
-
-    # -----------------------------------------------------------------------------
-
-    def query_model_async(self, query, cb):
-        """
-        Function which sends a query to {model} and calls a callback when the response is available.
-        :param query: The request to send to {model}
-        :param cb: Tu function to which the response will be passed to.
-        """
-        print(_("Request to {model} sent...").format(model=str(config.model)))
-        t = threading.Thread(target=self.query_model, args=[query, cb])
-        t.start()
