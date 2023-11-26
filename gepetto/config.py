@@ -2,8 +2,6 @@ import configparser
 import gettext
 import os
 
-import openai
-
 gettext.install("gepetto")
 
 class GepettoConfig:
@@ -20,7 +18,7 @@ class GepettoConfig:
     def __init__(self, config_path='config.ini'):
         if hasattr(self, 'config_path'):
             return
-        
+
         self.config_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), config_path)
         self.translate = None
         self.model = None
@@ -42,28 +40,26 @@ class GepettoConfig:
                                         languages=[language])
         self.translate.install()
 
-        # Get API keys
-        if not config.get('OpenAI', 'API_KEY'):
-            openai.api_key = os.getenv("OPENAI_API_KEY")
-        else:
-            openai.api_key = config.get('OpenAI', 'API_KEY')
-            print(f"Key set to {openai.api_key}")
+        try:
+            import openai
+            # Get API keys
+            if not config.get('OpenAI', 'API_KEY'):
+                openai.api_key = os.getenv("OPENAI_API_KEY")
+            else:
+                openai.api_key = config.get('OpenAI', 'API_KEY')
+                print(f"Key set to {openai.api_key}")
 
-        # Get OPENAPI proxy
-        if not config.get('OpenAI', 'OPENAI_PROXY'):
-            openai.proxy = None
-        else:
-            openai.proxy = config.get('OpenAI', 'OPENAI_PROXY')
-
-        # Get OPENAPI PROXY
-        if not config.get('OpenAI', 'OPENAI_PROXY'):
-            openai.proxy = None
-        else:
-            openai.proxy = config.get('OpenAI', 'OPENAI_PROXY')
+            # Get OPENAPI proxy
+            if not config.get('OpenAI', 'OPENAI_PROXY'):
+                openai.proxy = os.getenv("OPENAI_PROXY")
+            else:
+                openai.proxy = config.get('OpenAI', 'OPENAI_PROXY')
+        except ImportError:
+            print("No OpenAI module found, only local LLMs will be used.")
 
         # Get Ollama base URL
         if not config.get('Ollama', 'OLLAMA_BASE_URL'):
-            self.ollama_base_url = None
+            self.ollama_base_url = os.getenv("OLLAMA_BASE_URL")
         else:
             self.ollama_base_url = config.get('Ollama', 'OLLAMA_BASE_URL')
 
@@ -82,5 +78,5 @@ class GepettoConfig:
         config = configparser.RawConfigParser()
         config.read(self.config_path)
         config.set(section, option, new_value)
-        with open(self.config_path, "w") as f:
+        with open(self.config_path, "w", encoding="utf-8") as f:
             config.write(f)
