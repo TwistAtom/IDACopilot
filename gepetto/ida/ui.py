@@ -1,7 +1,9 @@
+import re
 import idaapi
 import ida_hexrays
 
 from .handlers import ExplainHandler, RenameHandler, SwapModelHandler
+from ..models import get_all_available_models
 from ..config import GepettoConfig
 
 config = GepettoConfig()
@@ -18,16 +20,7 @@ class GepettoPlugin(idaapi.plugin_t):
     rename_menu_path = "Edit/Gepetto/" + _("Rename variables")
 
     # Model selection menu
-    select_model_actions = [
-        {
-            "action_name": "gepetto:select_gpt35",
-            "menu_path": "gepetto:select_gpt4"
-        },
-        {
-            "action_name": "Edit/Gepetto/" + _("Select model") + "/gpt-3.5-turbo",
-            "menu_path": "Edit/Gepetto/" + _("Select model") + "/gpt-4-turbo"
-        },
-    ]
+    select_model_actions = []
 
     wanted_name = 'Gepetto'
     wanted_hotkey = ''
@@ -74,18 +67,6 @@ class GepettoPlugin(idaapi.plugin_t):
 
     # -----------------------------------------------------------------------------
 
-    def generate_plugin_select_menu(self):
-        for action in self.select_model_actions:
-            selected = str(config.model) == action["action_name"]
-            select_action = idaapi.action_desc_t(action["action_name"],
-                                                    action["action_name"],
-                                                    SwapModelHandler(action["action_name"], action["action_name"], selected),
-                                                    "",
-                                                    "",
-                                                    208 if selected else 0)
-            idaapi.register_action(select_action)
-            idaapi.attach_action_to_menu(action["menu_path"], action["action_name"], idaapi.SETMENU_APP)
-
     def run(self, arg):
         pass
 
@@ -102,6 +83,28 @@ class GepettoPlugin(idaapi.plugin_t):
             self.menu.unhook()
         return
 
+    # -----------------------------------------------------------------------------
+
+    def generate_plugin_select_menu(self):
+        for model_name in get_all_available_models():
+            action_name = f"gepetto:select_{re.sub(r'[-:,]+', '_', model_name)}"
+            menu_path = f"Edit/Gepetto/{_('Select model')}/{model_name}"
+
+            selected = str(config.model) == model_name
+            select_action = idaapi.action_desc_t(action_name,
+                                                    model_name,
+                                                    SwapModelHandler(action_name, model_name, selected),
+                                                    "",
+                                                    "",
+                                                    208 if selected else 0)
+            idaapi.register_action(select_action)
+            idaapi.attach_action_to_menu(menu_path, action_name, idaapi.SETMENU_APP)
+
+            self.select_model_actions.append({
+                "action_name": action_name,
+                "menu_path": menu_path
+            })
+ 
 # -----------------------------------------------------------------------------
 
 class ContextMenuHooks(idaapi.UI_Hooks):
