@@ -4,10 +4,10 @@ import requests
 
 import ida_kernwin
 
-from gepetto.models.base import LanguageModel
-import gepetto.config
+from . import LanguageModel
+from ..config import GepettoConfig
 
-config = gepetto.config.GepettoConfig()
+config = GepettoConfig()
 
 class Ollama(LanguageModel):
     def __init__(self, model):

@@ -4,10 +4,10 @@ import string
 import idaapi
 import ida_hexrays
 
-import gepetto.config
-from gepetto.ida.handlers import ExplainHandler, RenameHandler, SwapModelHandler
+from .handlers import ExplainHandler, RenameHandler, SwapModelHandler
+from ..config import GepettoConfig
 
-config = gepetto.config.GepettoConfig()
+config = GepettoConfig()
 
 # =============================================================================
 # Setup the context menu and hotkey in IDA

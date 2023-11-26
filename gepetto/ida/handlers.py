@@ -7,10 +7,10 @@ import idaapi
 import ida_hexrays
 import idc
 
-import gepetto.config
-from gepetto.models.base import get_model
+from ..models import get_model
+from ..config import GepettoConfig
 
-config = gepetto.config.GepettoConfig()
+config = GepettoConfig()
 
 def comment_callback(address, view, response):
     """

@@ -1,5 +1,5 @@
 from gepetto.config import GepettoConfig
-from gepetto.models.base import get_model
+from gepetto.models import get_model
 
 
 def PLUGIN_ENTRY():
